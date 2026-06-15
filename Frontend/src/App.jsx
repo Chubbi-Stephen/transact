@@ -11,6 +11,8 @@ import VerifyEmailPage from "./pages/VerifyEmailPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import { SocketProvider } from "./context/SocketContext";
+import { UIProvider } from "./context/UIContext";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import { Toaster } from "react-hot-toast";
 
@@ -18,23 +20,46 @@ function App() {
 	return (
 		<ThemeProvider>
 		<AuthProvider>
+			<SocketProvider>
+			<UIProvider>
+
 			<Toaster 
 				position="top-center" 
 				toastOptions={{
 					duration: 4000,
-					style: {
-						background: '#013653',
-						color: '#fff',
-						borderRadius: '1rem',
-						fontSize: '12px',
-						fontWeight: '900',
-						textTransform: 'uppercase',
-						letterSpacing: '0.1em',
-						padding: '16px 24px',
-						boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
-					}
+					success: {
+						style: {
+							background: '#013653',
+							color: '#fff',
+							borderRadius: '1.5rem',
+							fontSize: '11px',
+							fontWeight: '900',
+							textTransform: 'uppercase',
+							letterSpacing: '0.15em',
+							padding: '20px 32px',
+							border: '1px solid rgba(255,255,255,0.1)',
+							boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+						},
+						iconTheme: {
+							primary: '#E4570A',
+							secondary: '#fff',
+						},
+					},
+					error: {
+						style: {
+							background: '#991B1B',
+							color: '#fff',
+							borderRadius: '1.5rem',
+							fontSize: '11px',
+							fontWeight: '900',
+							textTransform: 'uppercase',
+							letterSpacing: '0.15em',
+							padding: '20px 32px',
+						},
+					},
 				}} 
 			/>
+
 			<Router>
 				<Routes>
 					<Route path="/login" element={<LoginPage />} />
@@ -85,8 +110,11 @@ function App() {
 					</Route>
 				</Routes>
 			</Router>
+			</UIProvider>
+			</SocketProvider>
 		</AuthProvider>
 		</ThemeProvider>
+
 	);
 }
 

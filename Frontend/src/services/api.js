@@ -49,6 +49,8 @@ export const authApi = {
 	updateProfile: (data) => api.put("/auth/update-profile", data),
 	updateSettings: (data) => api.put("/auth/update-settings", data),
 	changePassword: (data) => api.put("/auth/change-password", data),
+	setupBiometrics: (data) => api.post("/auth/setup-biometrics", data),
+	toggleRoundUp: () => api.post("/auth/toggle-roundup"),
 };
 
 // ── Transaction endpoints ──────────────────────────────────────────────────────
@@ -64,15 +66,21 @@ export const transactionsApi = {
 // ── AI endpoints ───────────────────────────────────────────────────────────────
 export const aiApi = {
 	analyze: () => api.get("/ai/analyze"),
-	recommendations: () => api.get("/ai/recommendations"),
-	predict: () => api.get("/ai/predict"),
+	getForecast: () => api.get("/ai/predict"),
+	sendMessage: (message) => api.post("/ai/chat", { message }),
+	getMonthlyReport: () => api.get("/ai/report"),
 };
+
+
 
 // ── Savings (Safelock) endpoints ────────────────────────────────────────────────
 export const savingsApi = {
 	getAll: () => api.get("/savings"),
+	getVault: () => api.get("/savings/vault"),
 	create: (data, headers = {}) => api.post("/savings", data, { headers }),
+	investToVault: (amount) => api.post("/savings/vault/invest", { amount }),
 	withdraw: (id) => api.post(`/savings/${id}/withdraw`),
+
 };
 
 // ── PIN endpoints ──────────────────────────────────────────────────────────────
@@ -87,11 +95,17 @@ export const billsApi = {
 	buyData: (data) => api.post("/bills/data", data),
 };
 
-// ── Card endpoints ─────────────────────────────────────────────────────────────
-export const cardsApi = {
+// ── Virtual Card endpoints ──────────────────────────────────────────────────────
+export const cardApi = {
 	getAll: () => api.get("/cards"),
-	create: (data) => api.post("/cards/create", data),
+	create: (data) => api.post("/cards", data),
 	fund: (data) => api.post("/cards/fund", data),
+};
+
+// ── Budget endpoints ───────────────────────────────────────────────────────────
+export const budgetApi = {
+	getAll: () => api.get("/budgets"),
+	set: (data) => api.post("/budgets", data),
 };
 
 export default api;

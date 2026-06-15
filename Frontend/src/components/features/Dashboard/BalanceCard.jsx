@@ -56,6 +56,14 @@ const BalanceCard = ({ onRefresh }) => {
 						</h2>
 					</div>
 					
+					{user?.accountNumber && (
+						<div className="mt-4 flex items-center space-x-2 bg-slate-50 w-fit px-4 py-2 rounded-xl border border-slate-100">
+							<span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Acct:</span>
+							<span className="text-xs font-black text-slate-900 tracking-[0.1em]">{user.accountNumber}</span>
+						</div>
+					)}
+
+					
 					<div className="mt-8 flex space-x-3">
 						<button 
 							className="flex-1 bg-[#013653] text-white py-3 rounded-2xl font-bold text-xs flex items-center justify-center space-x-2 hover:bg-[#012a41] transition-colors shadow-lg shadow-[#013653]/20"

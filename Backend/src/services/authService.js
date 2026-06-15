@@ -28,9 +28,11 @@ class AuthService {
         const newUser = new User({
             username, email, password: hashedPassword, firstName, lastName,
             verificationToken, verificationTokenExpires,
-            referredBy: inviter ? inviter._id : null
+            referredBy: inviter ? inviter._id : null,
+            accountNumber: Math.floor(1000000000 + Math.random() * 9000000000).toString()
         });
         await newUser.save();
+
 
         const sendEmail = require('../utils/sendEmail');
         await sendEmail({
@@ -93,23 +95,48 @@ class AuthService {
         return true;
     }
 
-    async upgradeKyc(userId, { level, bvn, documentType, documentNumber }) {
+    async upgradeKyc(userId, { level, bvn, documentType, documentNumber }, files = {}) {
         const user = await User.findById(userId);
         if (!user) throw new Error('User not found');
         
-        if (level === 2) {
-            if (!bvn || bvn.length !== 11) throw new Error('Invalid BVN. Must be 11 digits');
+        if (Number(level) === 2) {
+            if (!bvn || !/^\d{11}$/.test(bvn)) throw new Error('Invalid BVN format. Must be exactly 11 digits.');
+            
+            /* 
+            // ── PRODUCTION INTEGRATION BLUEPRINT ─────────────────────────────────────
+            // This is where you connect to NIBSS via Paystack/SmileID
+            const verify = await axios.get(`https://api.paystack.co/bank/resolve_bvn/${bvn}`, {
+                headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` }
+            });
+            
+            if (!verify.data.status) throw new Error('BVN Verification failed');
+            if (verify.data.data.first_name.toUpperCase() !== user.firstName.toUpperCase()) {
+                throw new Error('Name mismatch: BVN belongs to a different person');
+            }
+            // ────────────────────────────────────────────────────────────────────────
+            */
+
             user.bvn = bvn;
             user.kycLevel = 2;
-        } else if (level === 3) {
+        } else if (Number(level) === 3) {
+
+
             if (!documentType || !documentNumber) throw new Error('Document details are required for Tier 3');
             user.kycLevel = 3;
-            // In production, we would save the document URL or hash
+            
+            // Save file paths if present
+            if (files.idDocument) {
+                user.idDocumentUrl = `/uploads/${files.idDocument[0].filename}`;
+            }
+            if (files.utilityBill) {
+                user.utilityBillUrl = `/uploads/${files.utilityBill[0].filename}`;
+            }
         }
         
         await user.save();
         return user;
     }
+
 
     async updateProfile(userId, profileData) {
         const user = await User.findByIdAndUpdate(
@@ -178,8 +205,14 @@ class AuthService {
     }
 
     async getUserById(userId) {
-        return await User.findById(userId).select('-password');
+        const user = await User.findById(userId).select('-password');
+        if (user && !user.accountNumber) {
+            user.accountNumber = Math.floor(1000000000 + Math.random() * 9000000000).toString();
+            await user.save();
+        }
+        return user;
     }
+
 }
 
 module.exports = new AuthService();

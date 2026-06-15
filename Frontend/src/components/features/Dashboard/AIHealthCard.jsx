@@ -4,10 +4,12 @@ import axios from "axios";
 
 const AIHealthCard = ({ refreshTrigger }) => {
     const [health, setHealth] = useState(null);
+    const [report, setReport] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         fetchHealth();
+        fetchMonthlyReport();
     }, [refreshTrigger]);
 
     const fetchHealth = async () => {
@@ -23,6 +25,17 @@ const AIHealthCard = ({ refreshTrigger }) => {
             setLoading(false);
         }
     };
+
+    const fetchMonthlyReport = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            const { data } = await axios.get("http://localhost:5000/api/ai/report", {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (data.report) setReport(data.report);
+        } catch (err) {}
+    };
+
 
     if (loading) return (
         <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 h-40 animate-pulse flex items-center justify-center">
@@ -59,7 +72,25 @@ const AIHealthCard = ({ refreshTrigger }) => {
                 </div>
             </div>
 
+            {report && (
+                <div className="mb-6 bg-[#013653] p-6 rounded-[2rem] text-white relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                        <Sparkles size={60} />
+                    </div>
+                    <div className="flex items-center space-x-2 mb-3">
+                        <div className="w-6 h-6 bg-white/10 rounded-lg flex items-center justify-center">
+                            <Brain size={12} className="text-white" />
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">T-Co Monthly Review</span>
+                    </div>
+                    <p className="text-[11px] font-medium leading-relaxed mb-1 pr-8">
+                        {report}
+                    </p>
+                </div>
+            )}
+
             <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 relative mb-4">
+
                 <div className="flex items-start space-x-4">
                     <div className="p-3 bg-white rounded-xl shadow-sm text-slate-400">
                         <Sparkles size={18} className="animate-pulse" />

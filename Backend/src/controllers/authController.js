@@ -81,12 +81,13 @@ const getProfile = async (req, res) => {
 
 const upgradeKyc = async (req, res) => {
 	try {
-		const user = await AuthService.upgradeKyc(req.user._id, req.body);
-		res.status(200).json({ message: 'KYC upgrade successful', user });
+		const user = await AuthService.upgradeKyc(req.user._id, req.body, req.files);
+		res.status(200).json({ message: 'KYC upgrade mapping successful', user });
 	} catch (error) {
 		res.status(400).json({ message: error.message });
 	}
 };
+
 
 const updateProfile = async (req, res) => {
 	try {
@@ -149,9 +150,23 @@ const loginBiometrics = async (req, res) => {
     }
 };
 
+const toggleRoundUp = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        user.roundUpEnabled = !user.roundUpEnabled;
+        await user.save();
+        res.status(200).json({ 
+            message: `Round-up ${user.roundUpEnabled ? 'enabled' : 'disabled'}`, 
+            roundUpEnabled: user.roundUpEnabled 
+        });
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
 module.exports = { 
     register, login, logout, refreshToken, verifyToken, getProfile, 
     verifyEmail, forgotPassword, resetPassword, upgradeKyc,
     updateProfile, updateSettings, changePassword,
-    setupBiometrics, loginBiometrics
+    setupBiometrics, loginBiometrics, toggleRoundUp
 };

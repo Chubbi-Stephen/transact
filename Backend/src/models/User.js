@@ -89,7 +89,21 @@ const userSchema = new mongoose.Schema({
         credentialId: String,
         publicKey: String,
         enabled: { type: Boolean, default: false }
-    }
+    },
+    roundUpEnabled: {
+        type: Boolean,
+        default: false
+    },
+    accountNumber: {
+        type: String,
+        unique: true,
+        sparse: true
+    },
+    idDocumentUrl: String,
+    utilityBillUrl: String
+
+
+
 }, {
     timestamps: true,
     toJSON: { virtuals: true },

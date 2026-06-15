@@ -5,11 +5,16 @@ let io;
 const initRealTime = (httpServer) => {
     io = new Server(httpServer, {
         cors: {
-            origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+            origin: [
+                'http://localhost:5173',
+                'https://tranxxact.vercel.app',
+                process.env.FRONTEND_URL
+            ].filter(Boolean),
             methods: ['GET', 'POST'],
             credentials: true,
         },
     });
+
 
     io.on('connection', (socket) => {
         console.log(`Client connected: ${socket.id}`);

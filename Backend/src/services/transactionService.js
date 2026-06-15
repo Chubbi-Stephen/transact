@@ -11,6 +11,15 @@ class TransactionService {
         session.startTransaction();
 
         try {
+            // 0. KYC Limit Check
+            const user = await User.findById(userId).session(session);
+            const limits = { 1: 50000, 2: 200000, 3: 5000000 };
+            const currentLimit = limits[user.kycLevel || 1];
+            
+            if (type === 'debit' && amount > currentLimit) {
+                throw new Error(`Transaction exceeds your Tier ${user.kycLevel || 1} limit of ₦${currentLimit.toLocaleString()}. Please upgrade your KYC.`);
+            }
+
             // 1. Update user balance within the session
             const balanceDelta = type === 'credit' ? amount : -amount;
             const updatedUser = await User.findByIdAndUpdate(
@@ -24,6 +33,7 @@ class TransactionService {
                 throw new Error('Insufficient funds for this transaction');
             }
 
+
             // 2. Create the transaction record within the session
             const transaction = new Transaction({
                 amount,
@@ -36,10 +46,43 @@ class TransactionService {
             
             await transaction.save({ session });
 
-            // 3. Commit everything to the database
+            // 3. Automated Round-Up Logic (Spare Change)
+            if (type === 'debit' && status === 'completed') {
+                const userObj = await User.findById(userId).session(session);
+                if (userObj.roundUpEnabled) {
+                    const nextHundred = Math.ceil(amount / 100) * 100;
+                    const roundUpDiff = (nextHundred === amount) ? 100 : nextHundred - amount;
+                    
+                    if (roundUpDiff > 0 && userObj.balance >= roundUpDiff) {
+                        // Debit wallet for the difference
+                        userObj.balance -= roundUpDiff;
+                        await userObj.save({ session });
+
+                        // Credit T-Vault (Savings)
+                        const TVault = require('../models/TVault');
+                        await TVault.findOneAndUpdate(
+                            { user: userId },
+                            { $inc: { balance: roundUpDiff } },
+                            { session, upsert: true }
+                        );
+
+                        // Create round-up transaction record
+                        await new Transaction({
+                            amount: roundUpDiff,
+                            type: 'debit',
+                            category: 'Savings',
+                            description: `Spare Change Round-Up (${amount} → ${nextHundred})`,
+                            status: 'completed',
+                            user: userId,
+                        }).save({ session });
+                    }
+                }
+            }
+
+            // 4. Commit everything to the database
             await session.commitTransaction();
 
-            // 4. Check for Referral Bonus (Asynchronous)
+            // 5. Check for Referral Bonus (Asynchronous)
             if (type === 'credit') {
                 const referralService = require('./referralService');
                 referralService.processFirstTransactionBonus(userId, amount);

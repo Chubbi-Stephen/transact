@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { User, Lock, ArrowRight, Eye, EyeOff, Fingerprint } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import ForgotPasswordModal from "../../components/features/Modals/ForgotPasswordModal";
+import Logo from "../../components/common/Logo";
 
 const LoginPage = () => {
 	const [email, setEmail] = useState("");
@@ -48,9 +49,7 @@ const LoginPage = () => {
 
 			<div className="bg-white w-full max-w-md rounded-[3rem] p-10 shadow-2xl relative z-10 border border-slate-100">
 				<div className="flex flex-col items-center mb-10">
-					<div className="bg-[#E4570A] h-20 w-20 rounded-[2rem] flex justify-center items-center shadow-xl shadow-[#E4570A]/20 mb-6 rotate-12">
-						<span className="text-white text-4xl font-black -rotate-12">T</span>
-					</div>
+					<Logo size="lg" className="mb-6 rotate-12" />
 					<h1 className="text-3xl font-black text-slate-900 tracking-tight">Welcome Back</h1>
 					<p className="text-sm font-medium text-slate-400 mt-2">Log in to manage your wealth</p>
 				</div>

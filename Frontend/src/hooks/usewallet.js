@@ -1,51 +1,62 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { authApi, transactionsApi } from "../services/api";
 
 export const useWallet = () => {
 	const [balance, setBalance] = useState(0);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
 
-	useEffect(() => {
-		// This would be replaced with an actual API call
-		const fetchBalance = async () => {
-			try {
-				// Simulate API call
-				setLoading(true);
-				await new Promise((resolve) => setTimeout(resolve, 1000));
-				setBalance(12480.55);
-				setLoading(false);
-			} catch (err) {
-				setError("Failed to fetch wallet balance");
-				setLoading(false);
-			}
-		};
-
-		fetchBalance();
+	const fetchBalance = useCallback(async () => {
+		try {
+			setLoading(true);
+			const { data } = await authApi.getProfile();
+			setBalance(data.user.balance || 0);
+			setError(null);
+		} catch (err) {
+			setError("Failed to fetch wallet balance");
+		} finally {
+			setLoading(false);
+		}
 	}, []);
+
+	useEffect(() => {
+		fetchBalance();
+	}, [fetchBalance]);
 
 	const addMoney = async (amount) => {
 		try {
-			// Simulate API call
-			await new Promise((resolve) => setTimeout(resolve, 1000));
-			setBalance((prevBalance) => prevBalance + amount);
+			await transactionsApi.create({
+				amount,
+				type: 'credit',
+				category: 'Income',
+				description: 'Wallet funding',
+				status: 'completed'
+			});
+			await fetchBalance();
 			return true;
 		} catch (err) {
-			setError("Failed to add money");
+			setError(err.response?.data?.message || "Failed to add money");
 			return false;
 		}
 	};
 
 	const withdraw = async (amount) => {
 		try {
-			// Simulate API call
-			await new Promise((resolve) => setTimeout(resolve, 1000));
-			setBalance((prevBalance) => prevBalance - amount);
+			await transactionsApi.create({
+				amount,
+				type: 'debit',
+				category: 'Transfer',
+				description: 'Wallet withdrawal',
+				status: 'completed'
+			});
+			await fetchBalance();
 			return true;
 		} catch (err) {
-			setError("Failed to withdraw money");
+			setError(err.response?.data?.message || "Failed to withdraw money");
 			return false;
 		}
 	};
 
-	return { balance, loading, error, addMoney, withdraw };
+	return { balance, loading, error, addMoney, withdraw, refreshBalance: fetchBalance };
 };
+

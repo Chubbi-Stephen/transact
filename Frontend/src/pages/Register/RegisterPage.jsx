@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import Logo from "../../components/common/Logo";
 
 const RegisterPage = () => {
 	const [form, setForm] = useState({
@@ -40,108 +41,103 @@ const RegisterPage = () => {
 
 	return (
 		<div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-			<div className="bg-[#E5E3DC] p-8 rounded-lg shadow-md w-full max-w-md">
+			<div className="bg-[#E5E3DC] p-10 rounded-[3rem] shadow-2xl w-full max-w-md border border-white">
 				<div className="flex justify-center mb-8">
-					<div className="bg-[#E4570A] h-16 w-16 rounded-full flex justify-center items-center">
-						<span className="text-white text-3xl font-bold">T</span>
-					</div>
+					<Logo size="lg" />
 				</div>
-				<h1 className="text-2xl font-bold text-center mb-6">Create an Account</h1>
+				<h1 className="text-2xl font-black text-center mb-6 text-slate-900 tracking-tight">Create Account</h1>
 
 				{error && (
-					<p className="bg-red-100 text-red-600 p-3 rounded mb-4 text-sm">{error}</p>
+					<p className="bg-red-50 text-red-600 p-4 rounded-2xl mb-6 text-[11px] font-black uppercase tracking-widest text-center">{error}</p>
 				)}
 
-				<form onSubmit={handleSubmit}>
-					<div className="grid grid-cols-2 gap-4 mb-4">
+				<form onSubmit={handleSubmit} className="space-y-4">
+					<div className="grid grid-cols-2 gap-4">
 						<div>
-							<label className="block text-slate-700 mb-2" htmlFor="firstName">First Name</label>
+							<label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-2" htmlFor="firstName">First Name</label>
 							<input
 								id="firstName"
 								name="firstName"
 								type="text"
-								className="w-full p-3 border border-[#E4570A] rounded focus:outline-none focus:ring-2 focus:ring-[#E4570A]/40"
+								className="w-full p-4 bg-white/50 border border-slate-100 rounded-2xl focus:border-[#E4570A] outline-none text-sm font-bold shadow-inner"
 								value={form.firstName}
 								onChange={handleChange}
 								required
 							/>
 						</div>
 						<div>
-							<label className="block text-slate-700 mb-2" htmlFor="lastName">Last Name</label>
+							<label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-2" htmlFor="lastName">Last Name</label>
 							<input
 								id="lastName"
 								name="lastName"
 								type="text"
-								className="w-full p-3 border border-[#E4570A] rounded focus:outline-none focus:ring-2 focus:ring-[#E4570A]/40"
+								className="w-full p-4 bg-white/50 border border-slate-100 rounded-2xl focus:border-[#E4570A] outline-none text-sm font-bold shadow-inner"
 								value={form.lastName}
 								onChange={handleChange}
 								required
 							/>
 						</div>
 					</div>
-					<div className="mb-4">
-						<label className="block text-slate-700 mb-2" htmlFor="username">Username</label>
+					<div>
+						<label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-2" htmlFor="username">Username</label>
 						<input
 							id="username"
 							name="username"
 							type="text"
-							className="w-full p-3 border border-[#E4570A] rounded focus:outline-none focus:ring-2 focus:ring-[#E4570A]/40"
+							className="w-full p-4 bg-white/50 border border-slate-100 rounded-2xl focus:border-[#E4570A] outline-none text-sm font-bold shadow-inner"
 							value={form.username}
 							onChange={handleChange}
 							required
 						/>
 					</div>
-					<div className="mb-4">
-						<label className="block text-slate-700 mb-2" htmlFor="email">Email</label>
+					<div>
+						<label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-2" htmlFor="email">Email</label>
 						<input
 							id="email"
 							name="email"
 							type="email"
-							className="w-full p-3 border border-[#E4570A] rounded focus:outline-none focus:ring-2 focus:ring-[#E4570A]/40"
+							className="w-full p-4 bg-white/50 border border-slate-100 rounded-2xl focus:border-[#E4570A] outline-none text-sm font-bold shadow-inner"
 							value={form.email}
 							onChange={handleChange}
 							required
-							autoComplete="email"
 						/>
 					</div>
-					<div className="mb-4">
-						<label className="block text-slate-700 mb-2" htmlFor="password">Password</label>
+					<div>
+						<label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-2" htmlFor="password">Password</label>
 						<input
 							id="password"
 							name="password"
 							type="password"
-							className="w-full p-3 border border-[#E4570A] rounded focus:outline-none focus:ring-2 focus:ring-[#E4570A]/40"
+							className="w-full p-4 bg-white/50 border border-slate-100 rounded-2xl focus:border-[#E4570A] outline-none text-sm font-bold shadow-inner"
 							value={form.password}
 							onChange={handleChange}
 							required
-							autoComplete="new-password"
 						/>
 					</div>
-					<div className="mb-6">
-						<label className="block text-slate-700 mb-2" htmlFor="confirmPassword">Confirm Password</label>
+					<div>
+						<label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-2" htmlFor="confirmPassword">Confirm</label>
 						<input
 							id="confirmPassword"
 							name="confirmPassword"
 							type="password"
-							className="w-full p-3 border border-[#E4570A] rounded focus:outline-none focus:ring-2 focus:ring-[#E4570A]/40"
+							className="w-full p-4 bg-white/50 border border-slate-100 rounded-2xl focus:border-[#E4570A] outline-none text-sm font-bold shadow-inner"
 							value={form.confirmPassword}
 							onChange={handleChange}
 							required
-							autoComplete="new-password"
 						/>
 					</div>
 					<button
 						type="submit"
-						className="w-full bg-[#E4570A] text-white p-3 rounded font-medium hover:bg-[#c94508] transition-colors disabled:opacity-60"
+						className="w-full bg-[#013653] text-white py-5 rounded-full font-black text-[11px] uppercase tracking-widest shadow-xl hover:bg-[#E4570A] transition-all active:scale-95 disabled:opacity-50 mt-6"
 						disabled={loading}
 					>
-						{loading ? "Creating account..." : "Create Account"}
+						{loading ? "Creating..." : "Start Building Wealth"}
 					</button>
 				</form>
 
-				<p className="text-center mt-6 text-sm">
-					Already have an account?{" "}
-					<Link to="/login" className="text-[#E4570A] font-medium hover:underline">
+				<p className="text-center mt-8 text-sm font-medium text-slate-400">
+					Already using Tranxact?{" "}
+					<Link to="/login" className="text-[#E4570A] font-black uppercase tracking-widest text-[11px] hover:underline ml-1">
 						Login
 					</Link>
 				</p>

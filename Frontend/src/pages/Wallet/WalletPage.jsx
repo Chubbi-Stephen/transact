@@ -3,29 +3,45 @@ import { useAuth } from "../../hooks/useAuth";
 import { Copy, Check, Landmark, PiggyBank, ReceiptText, ArrowUpRight, ArrowDownLeft, ShieldCheck, Eye, EyeOff, LayoutGrid } from "lucide-react";
 import TransactionHistory from "../../components/features/Transactions/TransactionHistory";
 import toast from "react-hot-toast";
-import axios from "axios";
+import { savingsApi, transactionsApi } from "../../services/api";
 
 const WalletPage = () => {
     const { user } = useAuth();
     const [showBalance, setShowBalance] = useState(true);
     const [copied, setCopied] = useState(false);
     const [vaultData, setVaultData] = useState(null);
+    const [summary, setSummary] = useState({ totalIncome: 0, totalExpenses: 0 });
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetchVaultDetails();
+        const loadPageData = async () => {
+             setLoading(true);
+             await Promise.all([fetchVaultDetails(), fetchSummary()]);
+             setLoading(false);
+        };
+        loadPageData();
     }, []);
 
     const fetchVaultDetails = async () => {
         try {
-            const token = localStorage.getItem("token");
-            const { data } = await axios.get("http://localhost:5000/api/savings/vault", {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await savingsApi.getVault();
             setVaultData(data);
         } catch (err) {
             console.error("Failed to load vault details");
         }
     };
+
+
+    const fetchSummary = async () => {
+        try {
+            const { data } = await transactionsApi.getSummary();
+            setSummary(data);
+        } catch (err) {
+            console.error("Failed to load summary:", err);
+        }
+    };
+
+
 
     const copyToClipboard = (text) => {
         navigator.clipboard.writeText(text);
@@ -102,14 +118,14 @@ const WalletPage = () => {
                         <ArrowDownLeft size={20} strokeWidth={3} />
                     </div>
                     <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">Incoming this month</p>
-                    <p className="text-lg font-black text-slate-800">₦{user?.referralEarnings?.toLocaleString() || "12,500"}.00</p>
+                    <p className="text-lg font-black text-slate-800">₦{summary.totalIncome.toLocaleString()}</p>
                 </div>
                 <div className="bg-white p-6 rounded-[2.5rem] border border-slate-50 shadow-sm">
                     <div className="p-3 bg-orange-50 text-orange-500 w-fit rounded-2xl mb-4">
                         <ArrowUpRight size={20} strokeWidth={3} />
                     </div>
                     <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">Outgoing this month</p>
-                    <p className="text-lg font-black text-slate-800">₦24,000.00</p>
+                    <p className="text-lg font-black text-slate-800">₦{summary.totalExpenses.toLocaleString()}</p>
                 </div>
             </div>
 

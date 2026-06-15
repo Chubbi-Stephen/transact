@@ -1,14 +1,16 @@
 import { useState, useEffect } from "react";
-import { savingsApi } from "../../../services/api";
+import { savingsApi, authApi } from "../../../services/api";
 import { useAuth } from "../../../hooks/useAuth";
 import SafelockCard from "./SafelockCard";
 import CreateSafelockModal from "../Modals/CreateSafelockModal";
+import toast from "react-hot-toast";
+import { Zap } from "lucide-react";
 
 const SafelockSection = ({ refreshTrigger, onRefresh }) => {
 	const [locks, setLocks] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [isModalOpen, setIsModalOpen] = useState(false);
-	const { refreshUser } = useAuth();
+	const { user, refreshUser } = useAuth();
 
 	const fetchLocks = async () => {
 		try {
@@ -19,6 +21,16 @@ const SafelockSection = ({ refreshTrigger, onRefresh }) => {
 			console.error("Failed to fetch safelocks:", error);
 		} finally {
 			setLoading(false);
+		}
+	};
+
+	const handleToggleRoundUp = async () => {
+		try {
+			await authApi.toggleRoundUp();
+			await refreshUser();
+			toast.success(`Spare Change ${!user.roundUpEnabled ? 'enabled' : 'disabled'}!`);
+		} catch (error) {
+			toast.error("Failed to update round-up setting");
 		}
 	};
 

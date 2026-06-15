@@ -3,6 +3,8 @@ import { Search, Filter, ArrowUpRight, ArrowDownLeft, Calendar, Download, Layout
 import TransactionItem from "../../components/features/Transactions/TransactionItem";
 import { transactionsApi } from "../../services/api";
 import toast from "react-hot-toast";
+import { TransactionSkeleton } from "../../components/common/Skeleton";
+import { exportTransactionsToCSV } from "../../utils/exportUtils";
 
 const TransactionsPage = () => {
     const [transactions, setTransactions] = useState([]);
@@ -28,6 +30,25 @@ const TransactionsPage = () => {
             setLoading(false);
         }
     };
+
+    const handleExport = () => {
+        if (transactions.length === 0) {
+            toast.error("No transactions to export");
+            return;
+        }
+        toast.promise(
+            new Promise((resolve) => {
+                exportTransactionsToCSV(transactions, `Transact-Statement-${new Date().toISOString().split('T')[0]}.csv`);
+                setTimeout(resolve, 500);
+            }),
+            {
+                loading: 'Preparing export...',
+                success: 'Statement downloaded!',
+                error: 'Export failed',
+            }
+        );
+    };
+
 
     const filteredTransactions = transactions.filter((t) => {
         const matchesType = filter === "all" || t.type === filter;
@@ -66,7 +87,7 @@ const TransactionsPage = () => {
 
                 <div className="flex items-center space-x-3">
                     <button 
-                        onClick={() => toast.success("Exporting CSV...")}
+                        onClick={handleExport}
                         className="flex items-center space-x-2 px-5 py-3.5 bg-slate-100 text-slate-900 rounded-[1.2rem] font-black text-[9px] uppercase tracking-widest hover:bg-slate-200 transition-all"
                     >
                         <Download size={14} />
@@ -108,16 +129,9 @@ const TransactionsPage = () => {
 
                 <div className="p-4 md:p-8">
                     {loading ? (
-                        <div className="space-y-6">
-                            {[1, 2, 3, 4, 5].map(i => (
-                                <div key={i} className="flex items-center space-x-4 animate-pulse">
-                                    <div className="w-12 h-12 bg-slate-50 rounded-2xl"></div>
-                                    <div className="flex-1 space-y-2">
-                                        <div className="h-3 bg-slate-50 rounded w-1/4"></div>
-                                        <div className="h-2 bg-slate-50 rounded w-1/6"></div>
-                                    </div>
-                                    <div className="w-16 h-3 bg-slate-50 rounded"></div>
-                                </div>
+                        <div className="space-y-2">
+                            {[1, 2, 3, 4, 5, 6].map(i => (
+                                <TransactionSkeleton key={i} />
                             ))}
                         </div>
                     ) : filteredTransactions.length > 0 ? (

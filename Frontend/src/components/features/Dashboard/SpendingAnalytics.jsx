@@ -11,6 +11,7 @@ import {
 } from "chart.js";
 import { aiApi } from "../../../services/api";
 import { PieChart, BarChart3, TrendingDown } from "lucide-react";
+import { useUI } from "../../../context/UIContext";
 
 // Register Chart.js components
 ChartJS.register(
@@ -25,6 +26,7 @@ ChartJS.register(
 const SpendingAnalytics = ({ refreshTrigger }) => {
 	const [data, setData] = useState(null);
 	const [loading, setLoading] = useState(true);
+    const { toggleChat } = useUI();
 
 	useEffect(() => {
 		const fetchAnalysis = async () => {
@@ -52,12 +54,39 @@ const SpendingAnalytics = ({ refreshTrigger }) => {
 
 	if (!data || !data.insights || data.insights.length === 0) {
 		return (
-			<div className="bg-white p-12 rounded-[3rem] border border-slate-100 text-center flex flex-col items-center">
-                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-6">
-				    <BarChart3 size={32} className="text-slate-200" />
+			<div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.07] transition-all pointer-events-none">
+                    <BarChart3 size={180} />
                 </div>
-				<h3 className="text-slate-900 font-black text-xs uppercase tracking-widest mb-2">Spending Analytics</h3>
-				<p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-loose">Insufficient transaction data to<br/>generate smart insights</p>
+                
+                <div className="relative z-10 flex flex-col items-center text-center">
+                    <div className="w-20 h-20 bg-slate-50 flex items-center justify-center rounded-[2rem] mb-6 shadow-inner">
+                        <TrendingDown size={32} className="text-slate-200" />
+                    </div>
+                    
+                    <h3 className="text-slate-900 font-black text-xs uppercase tracking-[0.2em] mb-3">AI Spending Insights</h3>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.1em] leading-loose max-w-[200px] mb-8">
+                        Your financial story is just beginning. Start spending to unlock deep AI analysis.
+                    </p>
+
+                    {/* Ghost Progress Bars */}
+                    <div className="w-full space-y-4 opacity-10 pointer-events-none">
+                        {[70, 45, 30].map((w, i) => (
+                            <div key={i} className="space-y-1.5">
+                                <div className="flex justify-between h-2 bg-slate-100 rounded-full w-full">
+                                    <div className="h-full bg-slate-200 rounded-full" style={{ width: `${w}%` }}></div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <button 
+                        onClick={() => toggleChat(true)}
+                        className="mt-8 px-8 py-3 bg-[#013653] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#E4570A] transition-all shadow-lg active:scale-95"
+                    >
+                        Start Your Journey
+                    </button>
+                </div>
 			</div>
 		);
 	}
@@ -70,7 +99,7 @@ const SpendingAnalytics = ({ refreshTrigger }) => {
 				backgroundColor: COLORS.slice(0, data.insights.length),
 				borderWidth: 0,
 				hoverOffset: 10,
-                borderRadius: 4
+				borderRadius: 4
 			},
 		],
 	};
@@ -120,6 +149,13 @@ const SpendingAnalytics = ({ refreshTrigger }) => {
                             </div>
                         </div>
                     ))}
+                    
+                    {data.recommendation && (
+                        <div className="mt-8 p-6 bg-slate-50 rounded-[1.5rem] border border-slate-100">
+                            <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-2">AI Smart Advice</p>
+                            <p className="text-[10px] font-bold text-slate-900 leading-relaxed italic">"{data.recommendation}"</p>
+                        </div>
+                    )}
 				</div>
 			</div>
 		</div>

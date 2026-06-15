@@ -32,7 +32,9 @@ const BankTransferModal = ({ onClose, onRefresh }) => {
 	const { user } = useAuth();
     
     // Limits
-    const MAX_LIMIT = user?.kycLevel === 1 ? 50000 : 500000;
+    const limits = { 1: 50000, 2: 200000, 3: 5000000 };
+    const MAX_LIMIT = limits[user?.kycLevel || 1];
+
 
 	// Simulate name lookup
 	useEffect(() => {
@@ -110,17 +112,18 @@ const BankTransferModal = ({ onClose, onRefresh }) => {
 	return (
 		<Modal title="Bank Transfer" onClose={onClose}>
 			<form onSubmit={handleSubmit} className="p-6 space-y-6">
-                {user?.kycLevel === 1 && (
+                {user?.kycLevel < 3 && (
                     <div className="p-4 bg-amber-50 rounded-2xl flex items-start space-x-3 border border-amber-100">
                         <AlertCircle size={18} className="text-amber-500 shrink-0" />
                         <div>
-                            <p className="text-[10px] font-black uppercase text-amber-600 mb-1">Tier 1 Limit Applied</p>
+                            <p className="text-[10px] font-black uppercase text-amber-600 mb-1">Tier {user?.kycLevel} Limit Applied</p>
                             <p className="text-[10px] font-bold text-amber-500/80 leading-relaxed">
-                                You can only send up to ₦50,000. Upgrade to Tier 2 for ₦500,000 limits.
+                                You can only send up to ₦{MAX_LIMIT.toLocaleString()}. Upgrade to Tier {user?.kycLevel + 1} for ₦{limits[user?.kycLevel + 1]?.toLocaleString()} limits.
                             </p>
                         </div>
                     </div>
                 )}
+
 
 				<div className="space-y-4">
 					<div className="grid grid-cols-1 gap-4">
