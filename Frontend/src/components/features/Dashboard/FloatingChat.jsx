@@ -15,10 +15,61 @@ const FloatingChat = () => {
     ]);
     const [isTyping, setIsTyping] = useState(false);
     const [pendingAction, setPendingAction] = useState(null);
+    const [showThreads, setShowThreads] = useState(false);
+    const [threads, setThreads] = useState([]);
+    const [activeChatId, setActiveChatId] = useState(null);
+    const [isLoadingThreads, setIsLoadingThreads] = useState(false);
+    
     const scrollRef = useRef(null);
     const { user } = useAuth();
     const { openModal } = useUI();
 
+
+    // Fetch all threads on mount or when chat opens
+    useEffect(() => {
+        const fetchThreads = async () => {
+            try {
+                setIsLoadingThreads(true);
+                const token = localStorage.getItem('token');
+                const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/ai/chats`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setThreads(res.data);
+            } catch (err) {
+                console.error("Failed to fetch threads:", err);
+            } finally {
+                setIsLoadingThreads(false);
+            }
+        };
+
+        if (isChatOpen) {
+            fetchThreads();
+        }
+    }, [isChatOpen]);
+
+    const loadThread = async (chatId) => {
+        try {
+            setIsTyping(true);
+            setActiveChatId(chatId);
+            setShowThreads(false);
+            const token = localStorage.getItem('token');
+            const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/ai/chat/${chatId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setHistory(res.data);
+        } catch (err) {
+            toast.error("Failed to load conversation");
+        } finally {
+            setIsTyping(false);
+        }
+    };
+
+    const startNewChat = () => {
+        setActiveChatId(null);
+        setHistory([{ role: 'assistant', content: "New session started. What's on your mind?" }]);
+        setShowThreads(false);
+        setMessage('');
+    };
 
     // Auto-scroll to bottom
     useEffect(() => {
@@ -40,11 +91,20 @@ const FloatingChat = () => {
         try {
             const token = localStorage.getItem('token');
             const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/ai/chat`, 
-                { message: userMsg },
+                { message: userMsg, chatId: activeChatId },
                 { headers: { Authorization: `Bearer ${token}` }}
             );
 
             setHistory(prev => [...prev, { role: 'assistant', content: res.data.reply }]);
+            if (res.data.chatId && !activeChatId) {
+                setActiveChatId(res.data.chatId);
+                // Refresh threads list in background to show the new title
+                const threadsRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/ai/chats`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setThreads(threadsRes.data);
+            }
+
             if (res.data.action) {
                 setPendingAction(res.data.action);
             }
@@ -97,24 +157,123 @@ const FloatingChat = () => {
                         <div className="p-6 bg-[#013653] text-white flex justify-between items-center relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-10 -mt-10 blur-2xl"></div>
                             <div className="flex items-center space-x-3 relative z-10">
-                                <div className="w-10 h-10 bg-[#E4570A] rounded-2xl flex items-center justify-center shadow-lg">
-                                    <Briefcase size={20} className="text-white" />
+                                <div className="flex flex-col items-start">
+                                    <button 
+                                        onClick={() => setShowThreads(!showThreads)}
+                                        className="flex items-center space-x-2 bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-xl transition-all border border-white/5 active:scale-95 group"
+                                    >
+                                        <MessageSquare size={14} className="text-[#E4570A] group-hover:scale-110 transition-transform" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest">History</span>
+                                    </button>
                                 </div>
+                                <div className="h-8 w-[1px] bg-white/10 mx-1"></div>
                                 <div>
-                                    <h3 className="text-sm font-black uppercase tracking-widest text-white">T-Co Live</h3>
+                                    <h3 className="text-sm font-black uppercase tracking-widest text-white">T-Co AI</h3>
                                     <div className="flex items-center space-x-1">
                                         <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
-                                        <span className="text-[9px] font-bold text-white/50 uppercase tracking-widest">Connected</span>
+                                        <span className="text-[9px] font-bold text-white/50 uppercase tracking-widest">
+                                            {showThreads ? 'Archive' : 'Active'}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
-                            <button onClick={() => toggleChat(false)} className="bg-white/10 p-2 rounded-xl hover:bg-white/20 transition-all relative z-10">
-                                <X size={18} />
-                            </button>
+                            <div className="flex items-center space-x-2 relative z-10">
+                                <button 
+                                    onClick={() => toggleChat(false)} 
+                                    className="bg-white/10 p-2 rounded-xl hover:bg-white/20 transition-all"
+                                >
+                                    <X size={18} />
+                                </button>
+                            </div>
                         </div>
 
+                        {/* Thread Sidebar/Drawer Overlay */}
+                        <AnimatePresence>
+                            {showThreads && (
+                                <motion.div 
+                                    initial={{ x: -400 }}
+                                    animate={{ x: 0 }}
+                                    exit={{ x: -400 }}
+                                    className="absolute inset-0 top-[88px] bottom-0 z-50 bg-white flex flex-col"
+                                >
+                                    <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#013653]/40">Previous Chats</h4>
+                                        <button 
+                                            onClick={startNewChat}
+                                            className="bg-[#013653] text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center space-x-1"
+                                        >
+                                            <span>+ New</span>
+                                        </button>
+                                    </div>
+                                    <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                                        {isLoadingThreads ? (
+                                            <div className="flex flex-col items-center justify-center h-full space-y-2 opacity-50">
+                                                <div className="w-5 h-5 border-2 border-[#013653] border-t-transparent rounded-full animate-spin"></div>
+                                                <span className="text-[9px] font-bold uppercase">Syncing...</span>
+                                            </div>
+                                        ) : threads.length === 0 ? (
+                                            <div className="flex flex-col items-center justify-center h-full text-center p-6 space-y-2 opacity-30">
+                                                <Briefcase size={32} />
+                                                <p className="text-[10px] font-bold uppercase tracking-widest">No previous runs.</p>
+                                            </div>
+                                        ) : (
+                                            threads.map((t) => (
+                                                <button
+                                                    key={t._id}
+                                                    onClick={() => loadThread(t._id)}
+                                                    className={`w-full text-left p-4 rounded-2xl transition-all border group
+                                                        ${activeChatId === t._id 
+                                                            ? 'bg-[#013653] border-transparent' 
+                                                            : 'bg-white border-slate-100 hover:border-[#013653]/20 hover:bg-slate-50'}`}
+                                                >
+                                                    <h5 className={`text-xs font-black mb-1 truncate ${activeChatId === t._id ? 'text-white' : 'text-[#013653]'}`}>
+                                                        {t.title || 'New Session'}
+                                                    </h5>
+                                                    <p className={`text-[8px] font-bold uppercase tracking-widest ${activeChatId === t._id ? 'text-white/50' : 'text-slate-400'}`}>
+                                                        {new Date(t.updatedAt).toLocaleDateString()} at {new Date(t.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </p>
+                                                </button>
+                                            ))
+                                        )}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
                         {/* Chat Body */}
-                        <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/50">
+                        <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/50 relative">
+                            
+                            {/* Guided Welcome State for New Chats */}
+                            {history.length <= 1 && !showThreads && (
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center pointer-events-none"
+                                >
+                                    <div className="w-16 h-16 bg-[#013653]/5 rounded-[2rem] flex items-center justify-center mb-4">
+                                        <Briefcase size={32} className="text-[#013653]/20" />
+                                    </div>
+                                    <h4 className="text-sm font-black text-[#013653] uppercase tracking-widest mb-2">Tap to start</h4>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] mb-6">Ask me anything about your finance</p>
+                                    
+                                    <div className="grid grid-cols-1 gap-2 w-full pointer-events-auto">
+                                        {[
+                                            "How's my spending this month?",
+                                            "Transfer ₦5k to my T-Vault",
+                                            "Analyze my habits"
+                                        ].map((suggest, i) => (
+                                            <button 
+                                                key={i}
+                                                onClick={() => setMessage(suggest)}
+                                                className="w-full bg-white border border-slate-200 p-3 rounded-2xl text-[10px] font-black text-[#013653] uppercase tracking-widest hover:border-[#E4570A] hover:bg-slate-50 transition-all text-left"
+                                            >
+                                                {suggest}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </motion.div>
+                            )}
+
                             {history.map((msg, i) => (
                                 <motion.div
                                     initial={{ opacity: 0, x: msg.role === 'user' ? 20 : -20 }}

@@ -1,6 +1,10 @@
 {
 	"name": "transact-backend",
 	"version": "1.0.0",
+	"engines": {
+		"node": ">=18.0.0"
+	},
+
 	"description": "A backend for a fintech application with user authentication, transactions, and AI-driven personal finance features.",
 	"main": "server.js",
 	"scripts": {

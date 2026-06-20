@@ -57,17 +57,48 @@ const ProfilePage = () => {
                 await refreshUser();
                 toast.success("Biometrics disabled");
             } else {
-                const mockCredId = `cred_${Math.random().toString(36).slice(2)}`;
-                await authApi.setupBiometrics({ 
-                    credentialId: mockCredId, 
-                    publicKey: "mock_pub_key" 
-                });
-                localStorage.setItem("biometric_id", mockCredId);
-                await refreshUser();
-                toast.success("Biometrics enabled successfully!");
+                // Real WebAuthn Registration
+                if (!window.PublicKeyCredential) {
+                    return toast.error("Biometrics not supported on this browser");
+                }
+
+                const challenge = new Uint8Array(32);
+                window.crypto.getRandomValues(challenge);
+
+                const createCredentialOptions = {
+                    publicKey: {
+                        challenge,
+                        rp: { name: "Tranxact" },
+                        user: {
+                            id: new Uint8Array(16), // Simplified for demo
+                            name: user.email,
+                            displayName: user.firstName || user.username,
+                        },
+                        pubKeyCredParams: [{ alg: -7, type: "public-key" }],
+                        authenticatorSelection: {
+                            authenticatorAttachment: "platform",
+                            userVerification: "required",
+                        },
+                        timeout: 60000,
+                    },
+                };
+
+                const credential = await navigator.credentials.create(createCredentialOptions);
+                
+                if (credential) {
+                    const credentialId = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
+                    await authApi.setupBiometrics({ 
+                        credentialId: credentialId, 
+                        publicKey: "webauthn_enabled" 
+                    });
+                    localStorage.setItem("biometric_id", credentialId);
+                    await refreshUser();
+                    toast.success("Biometrics enabled successfully!");
+                }
             }
         } catch (err) {
-            toast.error("Failed to setup biometrics");
+            console.error("WebAuthn Error:", err);
+            toast.error("Failed to setup biometrics. Device rejected or timed out.");
         }
     };
 

@@ -35,8 +35,13 @@ const predictExpenses = async (req, res) => {
 const chatWithCoach = async (req, res) => {
     try {
         const userId = req.user.id || req.user._id;
-        const result = await AIService.chatWithCoach(userId, req.body.message);
-        res.status(200).json({ reply: result.reply, action: result.action || null });
+        const { message, chatId } = req.body;
+        const result = await AIService.chatWithCoach(userId, message, chatId);
+        res.status(200).json({ 
+            reply: result.reply, 
+            action: result.action || null,
+            chatId: result.chatId 
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -53,10 +58,32 @@ const getMonthlyReport = async (req, res) => {
     }
 };
 
+const getChatList = async (req, res) => {
+    try {
+        const userId = req.user.id || req.user._id;
+        const chats = await AIService.getUserChats(userId);
+        res.status(200).json(chats);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+const getChatMessages = async (req, res) => {
+    try {
+        const { chatId } = req.params;
+        const messages = await AIService.getChatMessages(chatId);
+        res.status(200).json(messages);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = { 
     analyzeSpending, 
     getBudgetRecommendations, 
     predictExpenses, 
     chatWithCoach, 
-    getMonthlyReport 
+    getMonthlyReport,
+    getChatList,
+    getChatMessages
 };

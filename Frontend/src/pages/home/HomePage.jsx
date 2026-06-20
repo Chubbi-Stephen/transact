@@ -13,6 +13,7 @@ import ReferralCard from "../../components/features/Dashboard/ReferralCard";
 import TVaultCard from "../../components/features/Dashboard/TVaultCard";
 import BudgetOverview from "../../components/features/Budget/BudgetOverview";
 import ForecastingSection from "../../components/features/Dashboard/ForecastingSection";
+import OnboardingTour from "../../components/features/Onboarding/OnboardingTour";
 
 
 const HomePage = () => {
@@ -42,9 +43,9 @@ const HomePage = () => {
             animate="visible"
         >
             <motion.div variants={itemVariants}><WelcomeSection /></motion.div>
-            <motion.div variants={itemVariants}><AIHealthCard refreshTrigger={refreshTrigger} /></motion.div>
+            <motion.div variants={itemVariants} id="ai-trigger"><AIHealthCard refreshTrigger={refreshTrigger} /></motion.div>
             
-            <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6" id="dashboard-stats">
                 <BalanceCard onRefresh={handleRefresh} />
                 <QuickActions onRefresh={handleRefresh} />
             </motion.div>
@@ -74,8 +75,10 @@ const HomePage = () => {
 
             </motion.div>
             
-            <motion.div variants={itemVariants}><SafelockSection refreshTrigger={refreshTrigger} onRefresh={handleRefresh} /></motion.div>
+            <motion.div variants={itemVariants} id="safelock-section"><SafelockSection refreshTrigger={refreshTrigger} onRefresh={handleRefresh} /></motion.div>
             <motion.div variants={itemVariants}><SpendingAnalytics refreshTrigger={refreshTrigger} /></motion.div>
+            
+            <OnboardingTour />
         </motion.div>
     );
 };

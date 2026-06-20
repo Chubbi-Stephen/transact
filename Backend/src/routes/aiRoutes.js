@@ -4,7 +4,9 @@ const {
     getBudgetRecommendations,
     predictExpenses,
     chatWithCoach,
-    getMonthlyReport
+    getMonthlyReport,
+    getChatList,
+    getChatMessages
 } = require('../controllers/aiController');
 const { authenticate } = require('../middlewares/authMiddleware');
 
@@ -16,6 +18,8 @@ router.get('/analyze', analyzeSpending);
 router.get('/recommendations', getBudgetRecommendations);
 router.get('/predict', predictExpenses);
 router.post('/chat', chatWithCoach);
+router.get('/chats', getChatList);
+router.get('/chat/:chatId', getChatMessages);
 router.get('/report', getMonthlyReport);
 
 

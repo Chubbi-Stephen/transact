@@ -150,7 +150,7 @@ class AuthService {
     async updateSettings(userId, settingsData) {
         const user = await User.findByIdAndUpdate(
             userId,
-            { $set: { notifications: settingsData.notifications } },
+            { $set: settingsData },
             { new: true }
         );
         return user;

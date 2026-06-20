@@ -65,3 +65,13 @@ body {
     animation: bounce-subtle 3s ease-in-out infinite;
 }
 
+.tour-highlight {
+    position: relative;
+    z-index: 10000 !important;
+    outline: 4px solid #E4570A !important;
+    outline-offset: 4px;
+    box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.4);
+    pointer-events: none;
+    border-radius: 2.5rem !important;
+}
+

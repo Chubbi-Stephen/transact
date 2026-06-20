@@ -24,17 +24,31 @@ class AIService {
     /**
      * Entry point for chat interactions
      */
-    async chatWithCoach(userId, userMessage) {
+    async chatWithCoach(userId, userMessage, chatId = null) {
         if (!this.groq) return { reply: "T-Co is currently syncing with the markets. Be right back.", action: null };
 
         try {
             // 1. Fetch comprehensive user context
-            const [user, vault, safelocks, chatRecord] = await Promise.all([
+            const [user, vault, safelocks] = await Promise.all([
                 User.findById(userId),
                 TVault.findOne({ user: userId }),
-                SavingsGoal.find({ user: userId, status: 'active' }),
-                AIChat.findOne({ user: userId }) || new AIChat({ user: userId, messages: [] })
+                SavingsGoal.find({ user: userId, status: 'active' })
             ]);
+
+            // 2. Fetch or Create Chat Session
+            let chatRecord;
+            if (chatId) {
+                chatRecord = await AIChat.findById(chatId);
+            }
+            
+            // If no chatId or chat not found, create a new one
+            if (!chatRecord) {
+                chatRecord = new AIChat({ 
+                    user: userId, 
+                    messages: [],
+                    title: userMessage.slice(0, 30) + (userMessage.length > 30 ? "..." : "")
+                });
+            }
 
             const totalSafelocked = safelocks.reduce((sum, s) => sum + s.currentBalance, 0);
             const context = {
@@ -47,27 +61,64 @@ class AIService {
                 }
             };
 
-            // 2. Generate Humanized Expert Response (Brain 1: The Coach)
+            // 3. Generate Humanized Expert Response
             const coachReply = await this._generateCoachResponse(context, chatRecord, userMessage);
 
-            // 3. Detect Actionable Intent (Brain 2: The Agent)
-            // No keyword filters. High-reasoning model analyzes intent + conversation history.
+            // 4. Detect Actionable Intent
             const actionTarget = await this._detectActionIntent(context, coachReply, userMessage);
 
-            // 4. Persistence
+            // 5. Persistence
             chatRecord.messages.push(
                 { role: 'user', content: userMessage },
                 { role: 'assistant', content: coachReply }
             );
-            // Sliding window for history (last 10 messages) to keep context sharp
-            if (chatRecord.messages.length > 20) chatRecord.messages = chatRecord.messages.slice(-20);
+            
+            // Auto-update title if it's still default or based on first message
+            if (chatRecord.messages.length === 2) {
+                this._updateChatTitle(chatRecord, userMessage).catch(e => console.error(e));
+            }
+
+            // Increased sliding window for history (last 30 messages)
+            if (chatRecord.messages.length > 30) {
+                this._summarizeOldMessages(chatRecord).catch(err => console.error("Summarization error:", err));
+                chatRecord.messages = chatRecord.messages.slice(-30);
+            }
             await chatRecord.save();
 
-            return { reply: coachReply, action: actionTarget };
+            return { 
+                reply: coachReply, 
+                action: actionTarget, 
+                chatId: chatRecord._id 
+            };
 
         } catch (error) {
             console.error("[T-Co Architecture Error]:", error);
             return { reply: "I hit a small snag while calculating that. One second, my guy.", action: null };
+        }
+    }
+
+    /**
+     * Retrieve all chat sessions for the user
+     */
+    async getUserChats(userId) {
+        try {
+            return await AIChat.find({ user: userId })
+                .select('title createdAt updatedAt')
+                .sort({ updatedAt: -1 });
+        } catch (error) {
+            return [];
+        }
+    }
+
+    /**
+     * Retrieve messages for a specific chat ID
+     */
+    async getChatMessages(chatId) {
+        try {
+            const chat = await AIChat.findById(chatId);
+            return chat ? chat.messages : [];
+        } catch (error) {
+            return [];
         }
     }
 
@@ -76,13 +127,15 @@ class AIService {
 TONE: Warm, intentional, authoritative yet sibling-like. Use natural Nigerian flow.
 GOAL: Empower the user. Don't dump numbers unless asked. Don't predict balances ("after the transfer").
 GUIDELINE: If they say "hey/hello", be brief and welcoming. Only talk finance when relevant.
-CONTEXT: User ${context.username}. Wallet: ₦${context.balances.wallet}. Vault: ₦${context.balances.vault}. Safelock: ₦${context.balances.safelock}.`;
+CONTEXT: User ${context.username}. Wallet: ₦${context.balances.wallet}. Vault: ₦${context.balances.vault}. Safelock: ₦${context.balances.safelock}.
+${chatRecord.summary ? `PAST CONTEXT SUMMARY: ${chatRecord.summary}` : ''}`;
 
         const completion = await this.groq.chat.completions.create({
             model: "llama-3.3-70b-versatile",
             messages: [
                 { role: 'system', content: systemPrompt },
-                ...chatRecord.messages.slice(-8).map(m => ({ role: m.role, content: m.content })),
+                // Expanded history window: Sending last 15 messages instead of 8
+                ...chatRecord.messages.slice(-15).map(m => ({ role: m.role, content: m.content })),
                 { role: 'user', content: userMessage }
             ],
             temperature: 0.7,
@@ -136,6 +189,54 @@ CONTEXT: User ${context.username}. Wallet: ₦${context.balances.wallet}. Vault:
 
     async getMonthlyCoachingReport(userId) {
         return "You're making steady progress.";
+    }
+
+    async _summarizeOldMessages(chatRecord) {
+        try {
+            const messagesToSummarize = chatRecord.messages.slice(0, -10); // Summarize everything but the most recent 10
+            if (messagesToSummarize.length < 5) return;
+
+            const summaryPrompt = `Summarize the following financial coaching conversation. Focus on:
+            1. User's financial goals mentioned.
+            2. Any specific problems they are facing.
+            3. Advice already given.
+            4. User preferences.
+            Current Summary to append to: ${chatRecord.summary || "None"}
+            
+            Conversation to summarize:
+            ${messagesToSummarize.map(m => `${m.role}: ${m.content}`).join('\n')}`;
+
+            const completion = await this.groq.chat.completions.create({
+                model: "llama-3.1-8b-instant", // Use a cheaper model for summarization
+                messages: [{ role: 'system', content: "You are a concise summarizer for a financial coach." }, { role: 'user', content: summaryPrompt }],
+                max_tokens: 300
+            });
+
+            chatRecord.summary = completion.choices[0]?.message?.content?.trim() || chatRecord.summary;
+            await chatRecord.save();
+        } catch (error) {
+            console.error("Failed to summarize old messages:", error);
+        }
+    }
+
+    async _updateChatTitle(chatRecord, firstMessage) {
+        try {
+            const completion = await this.groq.chat.completions.create({
+                model: "llama-3.1-8b-instant",
+                messages: [{ 
+                    role: 'system', 
+                    content: "Generate a 3-5 word catchy title for this conversation based on the user's first message. Output ONLY the title text." 
+                }, { 
+                    role: 'user', 
+                    content: firstMessage 
+                }],
+                max_tokens: 20
+            });
+            chatRecord.title = completion.choices[0]?.message?.content?.trim().replace(/"/g, '') || chatRecord.title;
+            await chatRecord.save();
+        } catch (e) {
+            console.error("Title generation failed");
+        }
     }
 }
 

@@ -6,6 +6,10 @@ const aiChatSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
+    title: {
+        type: String,
+        default: "New Conversation"
+    },
     messages: [{
         role: {
             type: String,
@@ -21,6 +25,10 @@ const aiChatSchema = new mongoose.Schema({
             default: Date.now
         }
     }],
+    summary: {
+        type: String,
+        default: ""
+    },
     lastAnalyzed: Date
 }, { timestamps: true });
 

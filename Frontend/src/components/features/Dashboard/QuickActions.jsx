@@ -28,7 +28,7 @@ const QuickActions = ({ onRefresh }) => {
 
 	return (
 		<>
-			<div className="bg-white p-7 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden">
+			<div id="quick-actions-bar" className="bg-white p-7 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden">
 				<div className="flex justify-between items-center mb-8">
 					<h3 className="text-slate-900 font-black text-xs uppercase tracking-widest">Quick Services</h3>
 					<div className="bg-[#E4570A]/10 p-2 rounded-lg text-[#E4570A]"><LayoutGrid size={14} /></div>
